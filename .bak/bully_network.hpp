@@ -1,12 +1,13 @@
 #include "bully.hpp"
 #include <iostream>
-#include <vector>
+
 
 using namespace std;
 
 class Network{
     private:
-        //static vector<Bully*> node_list;
+        // friend class Bully;
+        // static vector<Bully*> node_list;
         bool is_ID_available(int ID);
 
     public:
