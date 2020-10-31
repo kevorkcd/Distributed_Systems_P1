@@ -5,11 +5,12 @@
 using namespace std;
 
 class Network{
-    protected:
-        static vector<Bully*> node_list;
+    private:
+        //static vector<Bully*> node_list;
+        bool is_ID_available(int ID);
 
     public:
         Network();
-        void new_node();
+        void new_node(int new_ID);
         void shutdown_node(int ID);
 };
