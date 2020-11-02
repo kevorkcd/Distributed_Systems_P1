@@ -42,7 +42,7 @@ void BullyCLI::run() {
             int node_amount;
             cin >> node_amount;
             Network->make_nodes(node_amount);
-        }/*
+        }
         else if (input == "boot") {
             cout << "Enter the ID of the node you want to boot: ";
             int boot_ID;
@@ -63,7 +63,7 @@ void BullyCLI::run() {
         }
         else if (input == "ls") {
             Network->list_nodes();
-        }
+        }/*
         else if (input == "rmnode") {
             int rm_node_ID;
             cin >> rm_node_ID;
