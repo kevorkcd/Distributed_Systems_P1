@@ -1,4 +1,7 @@
 #include "bully.hpp"
+#include <string>
+
+using namespace std;
 
 /* Commands:
  *   mknode->ID
@@ -10,7 +13,7 @@
  *   rmnode->ID
 */
 
-class BullyCLI{
+class BullyCLI : public Bully {
     public:
         BullyCLI();
     private:
@@ -29,10 +32,12 @@ BullyCLI::BullyCLI() {
     string input;
     cin >> input;
 
-    while(true) {
-        switch(input) {
-            case mknodes:
-
+    while (true) {
+        if (input == "mknode") {
+            cout << "Enter ID: ";
+            int ID;
+            cin >> ID;
+            make_node(ID);
         }
     }
 }

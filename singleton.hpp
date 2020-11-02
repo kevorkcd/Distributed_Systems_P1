@@ -3,6 +3,7 @@
 class Singleton : public Bully {
     private:
         static Singleton* instance;
+        static Bully* Network;
         Singleton();
     public:
         static Singleton* get_instance();
@@ -17,4 +18,6 @@ Singleton* Singleton::get_instance() {
     return instance;
 }
 
-Singleton::Singleton() {}
+Singleton::Singleton() {
+    this->Network = new Bully();
+}
