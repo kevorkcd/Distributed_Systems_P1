@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -15,9 +17,11 @@ class Bully {
         int ID;
         state st;
 
+        friend class SingletonBully;
+        Bully() {};
+
     public:
         Bully(int ID);
-        Bully();
         void send_message(message msg, Bully* receiver);
         void receive(message msg, Bully* sender);
         void set_state(state st);
@@ -32,7 +36,7 @@ int Bully::message_no = 0;
 int Bully::curr_leader_ID = -1;
 vector<Bully*> Bully::node_list;
 
-Bully::Bully() {}
+//Bully::Bully() {}
 
 // Constructor
 Bully::Bully(int ID) {
