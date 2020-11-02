@@ -9,11 +9,15 @@
  * 
  * TO-DO: Optional
  * 1. Interpreter - SO COOL
+ *    - Commands: mknode->ID, mknodes->amount, shutdown->ID, fail->ID, boot->ID,
+ *                lsnodes, rmnode->ID
  * 2. Implement nodes on threads
  * 3. Bully.run() function for thread
+ * 
  */
 
 int main() {
+
     Bully* b0 = new Bully(0);
     Bully* b1 = new Bully(1);
 
@@ -21,6 +25,10 @@ int main() {
     b1->send_message(COORDINATOR, b0);
 
     cout << "Leader ID: " << b0->get_leader() << endl;
+
+    // for (int i = 0; i < 10; i++) {
+    //     Bully* tmp = new Bully(i);
+    // }
 
     return 0;
 }
