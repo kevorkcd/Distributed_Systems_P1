@@ -3,6 +3,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unistd.h>
+#include <thread>
+#include <chrono>
+// #include <synchapi.h>
 
 using namespace std;
 
@@ -22,6 +26,7 @@ class Bully {
 
     public:
         Bully(int ID);
+        void run();
         void send_message(message msg, Bully* receiver);
         void receive(message msg, Bully* sender);
         void set_state(state st);
@@ -54,6 +59,28 @@ Bully::Bully(int ID) {
     else {                                          // ID is not avaliable, destruct the current object
         cout << "ID " << ID << " not available" << endl;
         delete this;
+    }
+}
+
+void Bully::run() {
+    while (true) {
+        if (curr_leader_ID == -1 || node_list[curr_leader_ID]->st <= OFFLINE) {
+            // sleep 2sec
+            // this_thread::sleep_for(2s);
+            // 
+            // Sleep(2000);
+            this->st = IN_ELECTION;
+            for (int i = 0; i < node_list.size(); i++) {
+                if (node_list[i]->ID > this->ID) {
+                    this->send_message(ELECTION, node_list[i]);
+                }
+            }
+        }
+        cout << this->ID << ": Started sleeping" << endl;
+        unsigned int seconds = 2;
+        // usleep(microseconds);
+        // this_thread::sleep_for(chrono::milliseconds(seconds*1000));
+        cout << this->ID << ": Waking up" << endl;
     }
 }
 
