@@ -24,6 +24,7 @@ int main() {
         network->list_nodes();
         network->boot(5);
         network->boot(10);
+        network->join_threads();
         network->list_nodes();
     }
 

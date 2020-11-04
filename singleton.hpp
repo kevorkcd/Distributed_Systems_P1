@@ -26,6 +26,7 @@ class SingletonBully {
         void shutdown(int ID);
         void fail(int ID);
         void list_nodes();
+        void join_threads();
         // void remove_node(int ID);
         void help();
 };
@@ -59,7 +60,7 @@ void SingletonBully::boot(int ID) {
 	for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = ONLINE;
-            thread alive(&bully_access->node_list[i]->run());
+            bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
         }
     }
 }
@@ -86,6 +87,12 @@ void SingletonBully::list_nodes() {
         cout << "ID: " << curr->ID << "\t" << curr->st_string() << endl;
     }
     cout << "Total nodes: " << bully_access->node_list.size() << endl;
+}
+
+void SingletonBully::join_threads() {
+    for (int i = 0; i < bully_access->node_list.size(); i++) {
+        bully_access->node_list[i]->alive->join();
+    }
 }
 
 // void SingletonBully::remove_node(int ID) {

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <unistd.h>
+//#include <unistd.h>
 #include <thread>
 #include <chrono>
 // #include <synchapi.h>
@@ -20,6 +20,7 @@ class Bully {
         static vector<Bully*> node_list;
         int ID;
         state st;
+        thread* alive;
 
         friend class SingletonBully;
         Bully() {};
