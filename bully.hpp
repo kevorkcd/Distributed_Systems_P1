@@ -64,12 +64,9 @@ Bully::Bully(int ID) {
 }
 
 void Bully::run() {
+    srand(time(0));
     while (true) {
         if (curr_leader_ID == -1 || node_list[curr_leader_ID]->st <= OFFLINE) {
-            // sleep 2sec
-            // this_thread::sleep_for(2s);
-            // 
-            // Sleep(2000);
             this->st = IN_ELECTION;
             for (int i = 0; i < node_list.size(); i++) {
                 if (node_list[i]->ID > this->ID) {
@@ -77,11 +74,8 @@ void Bully::run() {
                 }
             }
         }
-        cout << this->ID << ": Started sleeping" << endl;
-        unsigned int seconds = 2;
-        // usleep(microseconds);
-        // this_thread::sleep_for(chrono::milliseconds(seconds*1000));
-        cout << this->ID << ": Waking up" << endl;
+        std::chrono::milliseconds interval((rand() % 3000) + 1001);
+        std::this_thread::sleep_for(interval);
     }
 }
 
