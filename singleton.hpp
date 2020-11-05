@@ -51,7 +51,7 @@ void SingletonBully::make_node(int ID) {
 }
 
 void SingletonBully::make_nodes(int node_amount) {
-    int curr_max_ID = bully_access->get_leader();
+    int curr_max_ID = bully_access->leader->ID;
     for (int i = 1; i <= node_amount; i++) {
         make_node(curr_max_ID+i);
     }
@@ -62,7 +62,6 @@ void SingletonBully::boot(int ID) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = ONLINE;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
-            //bully_access->node_list[i]->raise_election();
         }
     }
 }

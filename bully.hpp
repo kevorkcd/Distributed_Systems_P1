@@ -3,20 +3,19 @@
 #include <iostream>
 #include <vector>
 #include <string>
-//#include <unistd.h>
 #include <thread>
 #include <mutex>
 #include <chrono>
-// #include <synchapi.h>
 
 using namespace std;
 
 enum message {ELECTION=0, OK, COORDINATOR};
-enum state   {FAILED=0, OFFLINE, TIMEOUT, ONLINE, IN_ELECTION, LEADER};
+enum state   {FAILED=0, OFFLINE, ONLINE, TIMEOUT, IN_ELECTION, LEADER};
 
 class LeaderInfo {
     private:
         friend class Bully;
+        friend class SingletonBully;
         bool found;
         int ID;
         int index;
@@ -26,6 +25,8 @@ class LeaderInfo {
 
 class Bully {
     private:
+        friend class SingletonBully;
+
         static int message_no;
         static vector<Bully*> node_list;
         static LeaderInfo* leader;
@@ -35,7 +36,6 @@ class Bully {
         thread* alive;
         mutex m;
 
-        friend class SingletonBully;
         Bully() {};
 
     public:
@@ -47,7 +47,6 @@ class Bully {
         void raise_election();
         void fail();
         string st_string();
-        int get_leader();
 };
 
 // Initializing the static member attributes
@@ -62,7 +61,10 @@ void Bully::construct_leader_info() {
 
 // Constructor
 Bully::Bully(int ID) {
+    this->m.lock();
     this->st = OFFLINE;
+    this->m.unlock();
+
     bool is_ID_avalailable = true;
     for (int i = 0; i < node_list.size(); i++) {    // Is ID avaliable
         if (ID == node_list[i]->ID) {
@@ -70,7 +72,10 @@ Bully::Bully(int ID) {
         }
     }
     if (is_ID_avalailable) {                        // ID is avaliable, add this node to list
+        this->m.lock();
         this->ID = ID;
+        this->m.unlock();
+
         node_list.push_back(this);
     }
     else {                                          // ID is not avaliable, destruct the current object
@@ -85,7 +90,7 @@ void Bully::run() {
     while (true) {
         chrono::milliseconds interval((rand() % 5000) + 1001);
         this_thread::sleep_for(interval);
-        if (!leader->found || node_list[leader->ID]->st <= OFFLINE) {
+        if (!leader->found || node_list[leader->index]->st <= OFFLINE) {
             this->raise_election();
         }
     }
@@ -93,11 +98,11 @@ void Bully::run() {
 
 // This is the gate for the node to send messages to other nodes
 void Bully::send_message(message msg, Bully* receiver) {
-    if (this->st >= ONLINE) {           // If online
-        // if (msg == COORDINATOR) {
-        //     curr_leader_ID = this->ID;
-        // }
+    if (this->st >= ONLINE) {   // If online
+        this->m.lock();
         message_no++;
+        this->m.unlock();
+
         receiver->receive(msg, this);
     }
     else {
@@ -117,12 +122,16 @@ void Bully::receive(message msg, Bully* sender) {
                 break;
             case OK:                            //the message is OK
                 cout << "ID: " << this->ID << " received OK from ID: " << sender->ID << endl;
+                this->m.lock();
                 this->st = TIMEOUT;              //set state as online
+                this->m.unlock();
                 //this->largest_alive = false;
                 break;
             case COORDINATOR:                   //The message is COORDINATOR
                 cout << "ID: " << this->ID << " received COORDINATOR from ID: " << sender->ID << endl;
-                this->st = ONLINE;              //
+                this->m.lock();
+                this->st = ONLINE;
+                this->m.unlock();
                 break;
             default:
                 break;
@@ -131,64 +140,43 @@ void Bully::receive(message msg, Bully* sender) {
 }
 
 void Bully::raise_election() {
-    if (this->st == IN_ELECTION) {
+    if (this->st == TIMEOUT) {
         return;
     }
-    this->m.lock();
+
+    // NOTE Able to raise election while already running an election
+    // 
+
     cout << "ID: " << this->ID << " raising election" << endl;
+
+    this->m.lock();
     this->st = IN_ELECTION;
-    //this->largest_alive = true;
+    this->m.unlock();
+
     for (int i = 0; i < node_list.size(); i++) {
         if (node_list[i]->ID > this->ID) {
             this->send_message(ELECTION, node_list[i]);
         }
     }
-    this->m.unlock();
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));    // Sleep for 500ms - 0.5 seconds
-    this->m.lock();
+
     if (this->st == IN_ELECTION) {
+        this->m.lock();
         this->st = LEADER;
         leader->found = true;
         leader->ID = this->ID;
+        for (int i = 0; i < node_list.size(); i++){
+            if (this->ID == node_list[i]->ID) {
+                leader->index = i;
+            }
+        }
+        this->m.unlock();
+
         for (int i = 0; i < node_list.size(); i++) {
             if (!(node_list[i]->ID == this->ID)) {
                 this->send_message(COORDINATOR, node_list[i]);
             }
         }
-    }
-    this->m.unlock();
-    /*
-    if(this->largest_alive == true){
-        for (int i = 0; i < node_list.size(); i++) {
-            if (node_list[i]->ID > this->ID) {
-                this->send_message(COORDINATOR, node_list[i]);
-            }
-        }
-    }*/
-}
-
-// void Bully::set_state(state st) {
-//     this->st = st;
-// }
-
-// int Bully::get_ID() {
-//     if (this->st >= ONLINE) {
-//         return this->ID;
-//     }
-//     else {
-//         cout << "Node is " << this->st_string() << endl;
-//         return -1;
-//     }
-// }
-
-// Temporary test method
-int Bully::get_leader() {
-    if (this->st >= ONLINE) {
-        return leader->ID;
-    }
-    else {
-        cout << "Node is " << this->st_string() << endl;
-        return -1;
     }
 }
 
