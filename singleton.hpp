@@ -43,6 +43,7 @@ SingletonBully* SingletonBully::get_instance() {
 
 SingletonBully::SingletonBully() {
     bully_access = new Bully();
+    bully_access->construct_leader_info();
 }
 
 void SingletonBully::make_node(int ID) {
@@ -61,6 +62,7 @@ void SingletonBully::boot(int ID) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = ONLINE;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
+            bully_access->node_list[i]->raise_election();
         }
     }
 }
@@ -86,7 +88,8 @@ void SingletonBully::list_nodes() {
         Bully* curr = bully_access->node_list[i];
         cout << "ID: " << curr->ID << "\t" << curr->st_string() << endl;
     }
-    cout << "Total nodes: " << bully_access->node_list.size() << endl;
+    cout << "Total nodes:\t" << bully_access->node_list.size() << endl;
+    cout << "Total mesages:\t" << bully_access->message_no << endl;
 }
 
 void SingletonBully::join_threads() {
