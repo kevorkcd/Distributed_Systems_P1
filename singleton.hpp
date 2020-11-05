@@ -60,7 +60,7 @@ void SingletonBully::make_nodes(int node_amount) {
 void SingletonBully::boot(int ID) {
 	for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
-            bully_access->node_list[i]->st = ONLINE;
+            bully_access->node_list[i]->st = BOOTING;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
         }
     }

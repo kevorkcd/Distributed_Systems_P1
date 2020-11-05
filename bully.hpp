@@ -10,7 +10,7 @@
 using namespace std;
 
 enum message {ELECTION=0, OK, COORDINATOR};
-enum state   {FAILED=0, OFFLINE, ONLINE, TIMEOUT, IN_ELECTION, LEADER};
+enum state   {FAILED=0, OFFLINE, ONLINE, BOOTING, TIMEOUT, IN_ELECTION, LEADER};
 
 class LeaderInfo {
     private:
@@ -90,7 +90,11 @@ void Bully::run() {
     while (true) {
         chrono::milliseconds interval((rand() % 5000) + 1001);
         this_thread::sleep_for(interval);
-        if (!leader->found || node_list[leader->index]->st <= OFFLINE) {
+        // If a leader exists which isn't offline
+        if (this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) {
+            this->m.lock();
+            this->st = ONLINE;
+            this->m.unlock();
             this->raise_election();
         }
     }
