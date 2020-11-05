@@ -5,6 +5,7 @@
 #include <string>
 //#include <unistd.h>
 #include <thread>
+#include <mutex>
 #include <chrono>
 // #include <synchapi.h>
 
@@ -27,19 +28,12 @@ class Bully {
     private:
         static int message_no;
         static vector<Bully*> node_list;
-
         static LeaderInfo* leader;
-
-        /*typedef struct leader_info {
-            bool found;
-            int ID;
-            int index;
-        };
-        static leader_info leader;*/
 
         int ID;
         state st;
         thread* alive;
+        mutex m;
 
         friend class SingletonBully;
         Bully() {};
@@ -51,21 +45,17 @@ class Bully {
         void send_message(message msg, Bully* receiver);
         void receive(message msg, Bully* sender);
         void raise_election();
-        // void set_state(state st);
         void fail();
         string st_string();
-        // int get_ID();
         int get_leader();
 };
 
 // Initializing the static member attributes
 int Bully::message_no = 0;
 LeaderInfo* Bully::leader = nullptr;
-// struct leader_info Bully::leader;
-// Bully::leader_info Bully::leader;
 vector<Bully*> Bully::node_list;
 
-//Bully::Bully() {}
+// Leader construction
 void Bully::construct_leader_info() {
     leader = new LeaderInfo();
 }
@@ -89,14 +79,15 @@ Bully::Bully(int ID) {
     }
 }
 
+// Run function to be called on thread
 void Bully::run() {
     srand(time(0));
     while (true) {
+        chrono::milliseconds interval((rand() % 5000) + 1001);
+        this_thread::sleep_for(interval);
         if (!leader->found || node_list[leader->ID]->st <= OFFLINE) {
             this->raise_election();
         }
-        std::chrono::milliseconds interval((rand() % 3000) + 1001);
-        std::this_thread::sleep_for(interval);
     }
 }
 
@@ -120,7 +111,7 @@ void Bully::receive(message msg, Bully* sender) {
         switch(msg) {
             case ELECTION:                      //The message is Election
                 cout << "ID: " << this->ID << " received ELECTION from ID: " << sender->ID << endl;
-                this->st = IN_ELECTION;         //sets the state of the reciever to IN_ELECTION
+                //this->st = IN_ELECTION;         //sets the state of the reciever to IN_ELECTION
                 this->send_message(OK, sender); //send OK to sender
                 this->raise_election();
                 break;
@@ -140,6 +131,10 @@ void Bully::receive(message msg, Bully* sender) {
 }
 
 void Bully::raise_election() {
+    if (this->st == IN_ELECTION) {
+        return;
+    }
+    this->m.lock();
     cout << "ID: " << this->ID << " raising election" << endl;
     this->st = IN_ELECTION;
     //this->largest_alive = true;
@@ -148,8 +143,9 @@ void Bully::raise_election() {
             this->send_message(ELECTION, node_list[i]);
         }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));    // Sleep for 500ms - 0.5 seconds
-    //
+    this->m.unlock();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));    // Sleep for 500ms - 0.5 seconds
+    this->m.lock();
     if (this->st == IN_ELECTION) {
         this->st = LEADER;
         leader->found = true;
@@ -160,6 +156,7 @@ void Bully::raise_election() {
             }
         }
     }
+    this->m.unlock();
     /*
     if(this->largest_alive == true){
         for (int i = 0; i < node_list.size(); i++) {

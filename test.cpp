@@ -1,5 +1,10 @@
 #include "bully.hpp"
 #include "singleton.hpp"
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 
 int main() {
     {   // Testing basic message logic
@@ -23,7 +28,10 @@ int main() {
         network->make_node(10);
         network->list_nodes();
         network->boot(5);
+        network->list_nodes();
+        //sleep(5000);
         network->boot(10);
+        network->list_nodes();
         network->join_threads();
         network->list_nodes();
     }

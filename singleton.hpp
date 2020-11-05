@@ -62,7 +62,7 @@ void SingletonBully::boot(int ID) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = ONLINE;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
-            bully_access->node_list[i]->raise_election();
+            //bully_access->node_list[i]->raise_election();
         }
     }
 }
