@@ -11,6 +11,7 @@ using namespace std;
  *   shutdown->ID
  *   fail->ID
  *   boot->ID
+ *   btnodes
  *   lsnodes
  *   rmnode->ID
 */
@@ -43,11 +44,15 @@ void BullyCLI::run() {
             cin >> node_amount;
             Network->make_nodes(node_amount);
         }
-        else if (input == "boot") {
+        else if (input == "btnode") {
             cout << "Enter the ID of the node you want to boot: ";
             int boot_ID;
             cin >> boot_ID;
-            Network->boot(boot_ID);
+            Network->boot_node(boot_ID);
+        }
+        else if (input == "btnodes") {
+            cout << "Booting all offline nodes." << endl;
+            Network->boot_nodes();
         }
         else if (input == "shutdown") {
             cout << "Enter the ID of the node you want to shutdown: ";
