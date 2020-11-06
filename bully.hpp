@@ -101,6 +101,7 @@ void Bully::run() {
                 this->m.lock();
                 this->st = ONLINE;
                 this->m.unlock();
+                cout << this->ID << " initiate election." << endl;
                 this->raise_election();   
             }
         }
@@ -131,7 +132,7 @@ void Bully::receive(message msg, Bully* sender) {
                 // NOTE BUG
                 // Not raising election as leader is bad, as coordinator messages
                 // won't be send to newly booted nodes.
-                if (this->st >= ONLINE && this->st != LEADER) {
+                if (this->st >= ONLINE) {
                     this->raise_election();
                 }
                 break;
@@ -158,7 +159,7 @@ void Bully::receive(message msg, Bully* sender) {
 }
 
 void Bully::raise_election() {
-    cout << this->ID << " raising election" << endl;
+    cout << this->ID << " taking over election." << endl;
 
     this->m.lock();
     this->st = IN_ELECTION;
