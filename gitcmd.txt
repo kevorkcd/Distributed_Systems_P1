@@ -1,0 +1,6 @@
+Create new branch x and switch to it
+    $ git checkout -b x
+Push new branch to remote server
+    $ git push --set-upstream origin 0.5
+
+
