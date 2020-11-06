@@ -52,9 +52,23 @@ void SingletonBully::make_node(int ID) {
 }
 
 void SingletonBully::make_nodes(int node_amount) {
-    int curr_max_ID = bully_access->leader->ID;
+    // int curr_max_ID = bully_access->leader->ID;
+    // BUG
+    // The max ID does not have to be the Leader's Id.
+    // Node 7 can be Leader while node 8 is OFFLINE or FAILED
+    int max_ID = 0;
+    for (int i = 0; i < bully_access->node_list.size(); i++) {
+        int curr_ID = bully_access->node_list[i]->ID;
+        if (curr_ID > max_ID) {
+            max_ID = curr_ID;
+        }
+    }
+    // bool exists[max_ID+1] = { false };
+    // for (int i = 0; i < bully_access->node_list.size(); i++) {
+    //     exists[bully_access->node_list[i]->ID] = true;
+    // }
     for (int i = 1; i <= node_amount; i++) {
-        make_node(curr_max_ID+i);
+        make_node(max_ID+i);
     }
 }
 

@@ -93,7 +93,7 @@ void Bully::run() {
             this_thread::sleep_for(interval);
             this->st = ONLINE;
         }
-        chrono::milliseconds interval((rand() % 5000) + 1001);
+        chrono::milliseconds interval((rand() % 3000) + 1001);
         this_thread::sleep_for(interval);
         // If a leader exists which isn't offline
         if (this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) {
@@ -128,6 +128,9 @@ void Bully::receive(message msg, Bully* sender) {
             case ELECTION:                      //The message is Election
                 cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
                 this->send_message(OK, sender); //send OK to sender
+                // NOTE BUG
+                // Not raising election as leader is bad, as coordinator messages
+                // won't be send to newly booted nodes.
                 if (this->st >= ONLINE && !this->st == LEADER) {
                     this->raise_election();
                 }
@@ -167,7 +170,6 @@ void Bully::raise_election() {
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));    // Sleep for 500ms - 0.5 seconds
-
     if (this->st == IN_ELECTION) {
         this->m.lock();
         this->st = LEADER;
