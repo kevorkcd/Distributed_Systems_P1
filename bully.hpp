@@ -10,7 +10,7 @@
 using namespace std;
 
 enum message {ELECTION=0, OK, COORDINATOR};
-enum state   {FAILED=0, OFFLINE, ONLINE, BOOTING, TIMEOUT, IN_ELECTION, LEADER};
+enum state   {FAILED=0, OFFLINE, TIMEOUT, ONLINE, BOOTING, IN_ELECTION, LEADER};
 
 class LeaderInfo {
     private:
@@ -87,15 +87,22 @@ Bully::Bully(int ID) {
 // Run function to be called on thread
 void Bully::run() {
     srand(time(0));
-    while (true) {
+    while (!(this->st <= OFFLINE)) {
+        if (this->st == TIMEOUT) {            
+            chrono::milliseconds interval(5000);
+            this_thread::sleep_for(interval);
+            this->st = ONLINE;
+        }
         chrono::milliseconds interval((rand() % 5000) + 1001);
         this_thread::sleep_for(interval);
         // If a leader exists which isn't offline
         if (this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) {
-            this->m.lock();
-            this->st = ONLINE;
-            this->m.unlock();
-            this->raise_election();
+            if (!(this->st <= OFFLINE)) {
+                this->m.lock();
+                this->st = ONLINE;
+                this->m.unlock();
+                this->raise_election();   
+            }
         }
     }
 }
@@ -116,25 +123,29 @@ void Bully::send_message(message msg, Bully* receiver) {
 
 // Here the node receives a msg and does something according to the message
 void Bully::receive(message msg, Bully* sender) {
-    if (this->st >= ONLINE) {
+    if (this->st >= TIMEOUT) {
         switch(msg) {
             case ELECTION:                      //The message is Election
                 cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
-                //this->st = IN_ELECTION;         //sets the state of the reciever to IN_ELECTION
                 this->send_message(OK, sender); //send OK to sender
-                this->raise_election();
+                if (this->st >= ONLINE && !this->st == LEADER) {
+                    this->raise_election();
+                }
                 break;
             case OK:                            //the message is OK
                 cout << sender->ID << " -> " << this->ID << " OK" << endl;
                 this->m.lock();
-                this->st = TIMEOUT;              //set state as online
+                if (!(this->st <= OFFLINE)) {   //set state as online
+                    this->st = TIMEOUT;
+                }
                 this->m.unlock();
-                //this->largest_alive = false;
                 break;
             case COORDINATOR:                   //The message is COORDINATOR
                 cout << sender->ID << " -> " << this->ID << " COORDINATOR" << endl;
                 this->m.lock();
-                this->st = ONLINE;
+                if (!(this->st <= OFFLINE)) {
+                    this->st = TIMEOUT;
+                }
                 this->m.unlock();
                 break;
             default:
@@ -144,20 +155,13 @@ void Bully::receive(message msg, Bully* sender) {
 }
 
 void Bully::raise_election() {
-    if (this->st == TIMEOUT) {
-        return;
-    }
-
-    // NOTE Able to raise election while already running an election
-    // 
-
     cout << this->ID << " raising election" << endl;
 
     this->m.lock();
     this->st = IN_ELECTION;
     this->m.unlock();
 
-    for (int i = 0; i < node_list.size(); i++) {
+    for (int i = 0; i < node_list.size() && this->st >= ONLINE; i++) {
         if (node_list[i]->ID > this->ID) {
             this->send_message(ELECTION, node_list[i]);
         }
@@ -194,6 +198,12 @@ string Bully::st_string() {
             break;
         case ONLINE:
             return "ONLINE";
+            break;
+        case BOOTING:
+            return "BOOTING";
+            break;
+        case TIMEOUT:
+            return "TIMEOUT";
             break;
         case IN_ELECTION:
             return "IN_ELECTION";

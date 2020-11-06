@@ -33,19 +33,19 @@ void BullyCLI::run() {
         string input;
         cin >> input;
         if (input == "mknode") {
-            cout << "Enter ID to assemble: ";
+            //cout << "Enter ID to assemble: ";
             int ID;
             cin >> ID;
             Network->make_node(ID);
         }
        else if (input == "mknodes") {
-            cout << "Enter how many nodes you want to create: ";
+            //cout << "Enter how many nodes you want to create: ";
             int node_amount;
             cin >> node_amount;
             Network->make_nodes(node_amount);
         }
         else if (input == "btnode") {
-            cout << "Enter the ID of the node you want to boot: ";
+            //cout << "Enter the ID of the node you want to boot: ";
             int boot_ID;
             cin >> boot_ID;
             Network->boot_node(boot_ID);
@@ -54,14 +54,14 @@ void BullyCLI::run() {
             cout << "Booting all offline nodes." << endl;
             Network->boot_nodes();
         }
-        else if (input == "shutdown") {
-            cout << "Enter the ID of the node you want to shutdown: ";
+        else if (input == "kill") {
+            //cout << "Enter the ID of the node you want to shutdown: ";
             int shut_ID;
             cin >> shut_ID;
             Network->shutdown(shut_ID);
         }
-        else if (input == "fail") { 
-            cout << "Enter ID for the node you want to simulate as a failure: ";
+        else if (input == "crash") { 
+            //cout << "Enter ID for the node you want to simulate as a failure: ";
             int fail_ID;
             cin >> fail_ID;
             Network->fail(fail_ID);

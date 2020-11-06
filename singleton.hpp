@@ -86,8 +86,8 @@ void SingletonBully::shutdown(int ID) {
 
 void SingletonBully::fail(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
-        if (ID == bully_access->node_list[i]->ID) { 
-            bully_access->node_list[i]->st = FAILED;     
+        if (ID == bully_access->node_list[i]->ID) {
+            bully_access->node_list[i]->st = FAILED;   
         }
     }
 }
