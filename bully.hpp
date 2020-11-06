@@ -35,8 +35,12 @@ class Bully {
         state st;
         thread* alive;
         mutex m;
+        //mutex m_election;
+        static mutex m_election;
+        static mutex m_election_perm;
 
         Bully() {};
+        void _raise_election();
 
     public:
         void construct_leader_info();
@@ -44,7 +48,9 @@ class Bully {
         void run();
         void send_message(message msg, Bully* receiver);
         void receive(message msg, Bully* sender);
-        void raise_election();
+        void take_over_election();
+        void initiate_election();
+        //void raise_election();
         void fail();
         string st_string();
 };
@@ -53,6 +59,8 @@ class Bully {
 int Bully::message_no = 0;
 LeaderInfo* Bully::leader = nullptr;
 vector<Bully*> Bully::node_list;
+mutex Bully::m_election;
+mutex Bully::m_election_perm;
 
 // Leader construction
 void Bully::construct_leader_info() {
@@ -93,6 +101,9 @@ void Bully::run() {
             this_thread::sleep_for(interval);
             this->st = ONLINE;
         }
+        if (this->st == BOOTING) {
+            this->m_election_perm.unlock();
+        }
         chrono::milliseconds interval((rand() % 3000) + 1001);
         this_thread::sleep_for(interval);
         // If a leader exists which isn't offline
@@ -101,8 +112,7 @@ void Bully::run() {
                 this->m.lock();
                 this->st = ONLINE;
                 this->m.unlock();
-                cout << this->ID << " initiate election." << endl;
-                this->raise_election();   
+                this->initiate_election();   
             }
         }
     }
@@ -133,7 +143,7 @@ void Bully::receive(message msg, Bully* sender) {
                 // Not raising election as leader is bad, as coordinator messages
                 // won't be send to newly booted nodes.
                 if (this->st >= ONLINE) {
-                    this->raise_election();
+                    this->take_over_election();
                 }
                 break;
             case OK:                            //the message is OK
@@ -151,6 +161,7 @@ void Bully::receive(message msg, Bully* sender) {
                     this->st = TIMEOUT;
                 }
                 this->m.unlock();
+                this->m_election.unlock();
                 break;
             default:
                 break;
@@ -158,20 +169,36 @@ void Bully::receive(message msg, Bully* sender) {
     }
 }
 
-void Bully::raise_election() {
-    cout << this->ID << " taking over election." << endl;
+void Bully::initiate_election() {
+    if (this->m_election.try_lock()) {
+        cout << this->ID << " initiate election." << endl;
+        _raise_election();
+        // this->m_election.unlock();
+    }
+}
 
+void Bully::take_over_election() {
+    if (this->m_election_perm.try_lock()) {
+        this->m_election_perm.unlock();
+        cout << this->ID << " taking over election." << endl;
+        _raise_election();
+    }
+}
+
+void Bully::_raise_election() {
     this->m.lock();
     this->st = IN_ELECTION;
     this->m.unlock();
 
-    for (int i = 0; i < node_list.size() && this->st >= ONLINE; i++) {
+    for (int i = 0; i < node_list.size() && this->st >= ONLINE && this->m_election_perm.try_lock(); i++) {
+        this->m_election_perm.unlock();
         if (node_list[i]->ID > this->ID) {
             this->send_message(ELECTION, node_list[i]);
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));    // Sleep for 500ms - 0.5 seconds
     if (this->st == IN_ELECTION) {
+        this->m_election_perm.lock();
         this->m.lock();
         this->st = LEADER;
         leader->found = true;
