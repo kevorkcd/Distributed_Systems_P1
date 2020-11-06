@@ -131,7 +131,7 @@ void Bully::receive(message msg, Bully* sender) {
                 // NOTE BUG
                 // Not raising election as leader is bad, as coordinator messages
                 // won't be send to newly booted nodes.
-                if (this->st >= ONLINE && !this->st == LEADER) {
+                if (this->st >= ONLINE && this->st != LEADER) {
                     this->raise_election();
                 }
                 break;
