@@ -3,13 +3,12 @@
 int main() {
     {
         SingletonBully* network = SingletonBully::get_instance();
-        network->make_node(5);
-        network->make_node(10);
+        network->make_nodes(3);
+        network->boot_nodes();
         network->list_nodes();
-        network->boot(5);
-        network->list_nodes();
-        // this_thread::sleep_for(chrono::milliseconds 2000);
-        network->boot(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        network->shutdown(2);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         network->list_nodes();
         network->join_threads();
         network->list_nodes();
