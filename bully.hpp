@@ -110,7 +110,7 @@ void Bully::send_message(message msg, Bully* receiver) {
         receiver->receive(msg, this);
     }
     else {
-        cout << "Node " << ID << " is " << this->st_string() << endl;
+        // cout << "NOTICE " << this->ID << " is " << this->st_string() << endl;
     }
 }
 
@@ -119,20 +119,20 @@ void Bully::receive(message msg, Bully* sender) {
     if (this->st >= ONLINE) {
         switch(msg) {
             case ELECTION:                      //The message is Election
-                cout << "ID: " << this->ID << " received ELECTION from ID: " << sender->ID << endl;
+                cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
                 //this->st = IN_ELECTION;         //sets the state of the reciever to IN_ELECTION
                 this->send_message(OK, sender); //send OK to sender
                 this->raise_election();
                 break;
             case OK:                            //the message is OK
-                cout << "ID: " << this->ID << " received OK from ID: " << sender->ID << endl;
+                cout << sender->ID << " -> " << this->ID << " OK" << endl;
                 this->m.lock();
                 this->st = TIMEOUT;              //set state as online
                 this->m.unlock();
                 //this->largest_alive = false;
                 break;
             case COORDINATOR:                   //The message is COORDINATOR
-                cout << "ID: " << this->ID << " received COORDINATOR from ID: " << sender->ID << endl;
+                cout << sender->ID << " -> " << this->ID << " COORDINATOR" << endl;
                 this->m.lock();
                 this->st = ONLINE;
                 this->m.unlock();
@@ -151,7 +151,7 @@ void Bully::raise_election() {
     // NOTE Able to raise election while already running an election
     // 
 
-    cout << "ID: " << this->ID << " raising election" << endl;
+    cout << this->ID << " raising election" << endl;
 
     this->m.lock();
     this->st = IN_ELECTION;

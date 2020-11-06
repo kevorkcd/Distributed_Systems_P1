@@ -22,7 +22,8 @@ class SingletonBully {
         static SingletonBully* get_instance();
         void make_node(int ID);
         void make_nodes(int node_amount);
-        void boot(int ID);
+        void boot_node(int ID);
+        void boot_nodes();
         void shutdown(int ID);
         void fail(int ID);
         void list_nodes();
@@ -57,9 +58,18 @@ void SingletonBully::make_nodes(int node_amount) {
     }
 }
 
-void SingletonBully::boot(int ID) {
+void SingletonBully::boot_node(int ID) {
 	for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
+            bully_access->node_list[i]->st = BOOTING;
+            bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
+        }
+    }
+}
+
+void SingletonBully::boot_nodes() {
+    for (int i = 0; i < bully_access->node_list.size(); i++) {
+        if (bully_access->node_list[i]->st == OFFLINE) {
             bully_access->node_list[i]->st = BOOTING;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
         }
@@ -108,11 +118,12 @@ void SingletonBully::join_threads() {
 
 void SingletonBully::help() {
     cout << "Avaliable commands are: " << endl;
-    cout << "-   mknode      : for making a single node." << endl;
-    cout << "-   mknodes     : for making multiple nodes." << endl;
-    cout << "-   boot        : booting up a node." << endl;
-    cout << "-   shutdown    : for shutting down a node." << endl;
-    cout << "-   fail        : to crash a node." << endl;
-    cout << "-   ls          : to list all nodes." << endl;
+    cout << "-   mknode      : make a single node." << endl;
+    cout << "-   mknodes     : make multiple nodes." << endl;
+    cout << "-   btnode      : boot up a node." << endl;
+    cout << "-   btnodes     : boot up all offline nodes." << endl;
+    cout << "-   shutdown    : shut down a node." << endl;
+    cout << "-   fail        : crash a node." << endl;
+    cout << "-   ls          : list all nodes." << endl;
     //cout << "-   rmnode      : to remove a node from the network." << endl;
 }
