@@ -97,14 +97,14 @@ void Bully::run() {
     srand(time(0));
     while (!(this->st <= OFFLINE)) {
         if (this->st == TIMEOUT) {            
-            chrono::milliseconds interval(5000);
+            chrono::milliseconds interval(200);
             this_thread::sleep_for(interval);
             this->st = ONLINE;
         }
-        chrono::milliseconds interval((rand() % 3000) + 1001);
+        chrono::milliseconds interval((rand() % 300) + 101);
         this_thread::sleep_for(interval);
         // If a leader exists which isn't offline
-        if (this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) {
+        if ((this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) && this->st != IN_ELECTION) {
             if (!(this->st <= OFFLINE)) {
                 this->m_election_perm.unlock();
                 this->m.lock();
@@ -118,6 +118,8 @@ void Bully::run() {
 
 // This is the gate for the node to send messages to other nodes
 void Bully::send_message(message msg, Bully* receiver) {
+    while (this->st == TIMEOUT) {}
+
     if (this->st >= ONLINE) {   // If online
         this->m.lock();
         message_no++;
@@ -196,7 +198,7 @@ void Bully::_raise_election() {
             }
         }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));    // Sleep for 500ms - 0.5 seconds
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));    // Sleep for 500ms - 0.5 seconds
     if (this->st == IN_ELECTION) {
         this->m_election_perm.lock();
         this->m.lock();
