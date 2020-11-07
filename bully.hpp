@@ -35,6 +35,7 @@ class Bully {
         state st;
         thread* alive;
         mutex m;
+        mutex responsive;
         //mutex m_election;
         static mutex m_election;
         static mutex m_election_perm;

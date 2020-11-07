@@ -75,6 +75,7 @@ void SingletonBully::make_nodes(int node_amount) {
 void SingletonBully::boot_node(int ID) {
 	for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
+            bully_access->node_list[i]->responsive.unlock();
             bully_access->node_list[i]->st = BOOTING;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
         }
@@ -84,6 +85,7 @@ void SingletonBully::boot_node(int ID) {
 void SingletonBully::boot_nodes() {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (bully_access->node_list[i]->st == OFFLINE) {
+            bully_access->node_list[i]->responsive.unlock();
             bully_access->node_list[i]->st = BOOTING;
             bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
         }
@@ -94,6 +96,7 @@ void SingletonBully::shutdown(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = OFFLINE;
+            bully_access->node_list[i]->responsive.lock();
         }
     }
 }
@@ -101,7 +104,8 @@ void SingletonBully::shutdown(int ID) {
 void SingletonBully::fail(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
-            bully_access->node_list[i]->st = FAILED;   
+            bully_access->node_list[i]->st = FAILED;
+            bully_access->node_list[i]->responsive.unlock();
         }
     }
 }
