@@ -7,7 +7,7 @@ int main() {
         network->boot_nodes();
         network->list_nodes();
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-        network->shutdown(2);
+        network->shutdown(3);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         network->list_nodes();
         network->join_threads();

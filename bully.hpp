@@ -101,14 +101,12 @@ void Bully::run() {
             this_thread::sleep_for(interval);
             this->st = ONLINE;
         }
-        if (this->st == BOOTING) {
-            this->m_election_perm.unlock();
-        }
         chrono::milliseconds interval((rand() % 3000) + 1001);
         this_thread::sleep_for(interval);
         // If a leader exists which isn't offline
         if (this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) {
             if (!(this->st <= OFFLINE)) {
+                this->m_election_perm.unlock();
                 this->m.lock();
                 this->st = ONLINE;
                 this->m.unlock();
@@ -190,10 +188,12 @@ void Bully::_raise_election() {
     this->st = IN_ELECTION;
     this->m.unlock();
 
-    for (int i = 0; i < node_list.size() && this->st >= ONLINE && this->m_election_perm.try_lock(); i++) {
-        this->m_election_perm.unlock();
-        if (node_list[i]->ID > this->ID) {
-            this->send_message(ELECTION, node_list[i]);
+    for (int i = 0; i < node_list.size(); i++) {
+        if (this->st >= ONLINE && this->m_election_perm.try_lock()) {
+            this->m_election_perm.unlock();
+            if (node_list[i]->ID > this->ID) {
+                this->send_message(ELECTION, node_list[i]);
+            }
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));    // Sleep for 500ms - 0.5 seconds
