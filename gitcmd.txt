@@ -6,3 +6,10 @@ Create new branch x and switch to it
     $ git checkout -b x
 Push new branch to remote server
     $ git push --set-upstream origin 0.5
+
+Discard all local changes to all files permanently:
+    $ git reset --hard
+Discarding local changes (permanently) to a file:
+    $ git checkout -- <file>
+Discard all local changes, but save them for possible re-use later:
+    $ git stash

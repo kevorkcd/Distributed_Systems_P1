@@ -119,58 +119,66 @@ void Bully::run() {
 
 // This is the gate for the node to send messages to other nodes
 void Bully::send_message(message msg, Bully* receiver) {
-    while (this->st == TIMEOUT) {}
+    if (receiver->responsive.try_lock()) {
+        receiver->responsive.unlock();
+        while (this->st == TIMEOUT) {}
 
-    if (this->st >= ONLINE) {   // If online
-        this->m.lock();
-        message_no++;
-        this->m.unlock();
+        if (this->st >= ONLINE) {   // If online
+            this->m.lock();
+            message_no++;
+            this->m.unlock();
 
-        receiver->receive(msg, this);
+            receiver->receive(msg, this);
+        }
+        else {
+            // cout << "NOTICE " << this->ID << " is " << this->st_string() << endl;
+        }
     }
-    else {
-        // cout << "NOTICE " << this->ID << " is " << this->st_string() << endl;
-    }
+
 }
 
 // Here the node receives a msg and does something according to the message
 void Bully::receive(message msg, Bully* sender) {
-    if (this->st >= TIMEOUT) {
-        switch(msg) {
-            case ELECTION:                      //The message is Election
-                cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
-                this->send_message(OK, sender); //send OK to sender
-                // NOTE BUG
-                // Not raising election as leader is bad, as coordinator messages
-                // won't be send to newly booted nodes.
-                if (this->st >= ONLINE) {
-                    this->take_over_election();
-                }
-                break;
-            case OK:                            //the message is OK
-                cout << sender->ID << " -> " << this->ID << " OK" << endl;
-                this->m.lock();
-                if (!(this->st <= OFFLINE)) {   //set state as online
-                    this->st = TIMEOUT;
-                }
-                this->m.unlock();
-                break;
-            case COORDINATOR:                   //The message is COORDINATOR
-                cout << sender->ID << " -> " << this->ID << " COORDINATOR" << endl;
-                this->m.lock();
-                if (!(this->st <= OFFLINE)) {
-                    this->st = TIMEOUT;
-                }
-                this->m.unlock();
-                this->m_election.unlock();
-                break;
-            default:
-                break;
+    if (this->responsive.try_lock()) {
+        this->responsive.unlock();
+        if (this->st >= TIMEOUT) {
+            switch(msg) {
+                case ELECTION:                      //The message is Election
+                    cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
+                    this->send_message(OK, sender); //send OK to sender
+                    // NOTE BUG
+                    // Not raising election as leader is bad, as coordinator messages
+                    // won't be send to newly booted nodes.
+                    if (this->st >= ONLINE) {
+                        this->take_over_election();
+                    }
+                    break;
+                case OK:                            //the message is OK
+                    cout << sender->ID << " -> " << this->ID << " OK" << endl;
+                    this->m.lock();
+                    if (!(this->st <= OFFLINE)) {   //set state as online
+                        this->st = TIMEOUT;
+                    }
+                    this->m.unlock();
+                    break;
+                case COORDINATOR:                   //The message is COORDINATOR
+                    cout << sender->ID << " -> " << this->ID << " COORDINATOR" << endl;
+                    this->m.lock();
+                    if (!(this->st <= OFFLINE)) {
+                        this->st = TIMEOUT;
+                    }
+                    this->m.unlock();
+                    this->m_election.unlock();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
 
 void Bully::initiate_election() {
+    // cout << "ID: " << this->ID << " _rasie election" << endl;
     if (this->m_election.try_lock()) {
         cout << this->ID << " initiate election." << endl;
         _raise_election();
@@ -187,6 +195,7 @@ void Bully::take_over_election() {
 }
 
 void Bully::_raise_election() {
+    
     this->m.lock();
     this->st = IN_ELECTION;
     this->m.unlock();
@@ -200,9 +209,11 @@ void Bully::_raise_election() {
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(250));    // Sleep for 500ms - 0.5 seconds
+    // cout << "ID: " << this->ID << " Sleep done, checking if I got ok's." << endl;
     if (this->st == IN_ELECTION) {
         this->m_election_perm.lock();
         this->m.lock();
+    //    cout << "ID: " << this->ID <<" Got no okay's now I'm leader." << endl;
         this->st = LEADER;
         leader->found = true;
         leader->ID = this->ID;

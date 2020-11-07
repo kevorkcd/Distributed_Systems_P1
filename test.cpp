@@ -13,11 +13,12 @@ int main() {
         network->fail(1);
         network->shutdown(2);
         network->shutdown(10);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         network->list_nodes();
         BullyCLI* UI = new BullyCLI();
         UI->run();
         network->join_threads();
+        // Online: 3, 7, 8, 9
     }
 
     return 0;

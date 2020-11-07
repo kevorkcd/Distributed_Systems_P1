@@ -97,6 +97,7 @@ void SingletonBully::shutdown(int ID) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = OFFLINE;
             bully_access->node_list[i]->responsive.lock();
+            bully_access->node_list[i]->m_election.unlock();
         }
     }
 }
@@ -105,7 +106,8 @@ void SingletonBully::fail(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
             bully_access->node_list[i]->st = FAILED;
-            bully_access->node_list[i]->responsive.unlock();
+            bully_access->node_list[i]->responsive.lock();
+            bully_access->node_list[i]->m_election.unlock();
         }
     }
 }
@@ -113,7 +115,12 @@ void SingletonBully::fail(int ID) {
 void SingletonBully::list_nodes() {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         Bully* curr = bully_access->node_list[i];
-        cout << "ID: " << curr->ID << "\t" << curr->st_string() << endl;
+        if (bully_access->node_list[i]->st >= TIMEOUT) {
+            cout << "ID: " << curr->ID << "\t" << "   "<< curr->st_string() << endl;
+        }
+        else {
+            cout << "ID: " << curr->ID << "\t" << " X " << curr->st_string() << endl;
+        }
     }
     cout << "Total nodes:\t" << bully_access->node_list.size() << endl;
     cout << "Total mesages:\t" << bully_access->message_no << endl;
