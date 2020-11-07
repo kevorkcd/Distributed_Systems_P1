@@ -16,3 +16,7 @@
 
 # Vscode folders
 *.vscode
+
+# Compiled outputs
+test
+cli
