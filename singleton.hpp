@@ -1,17 +1,6 @@
 #pragma once
 
 #include "bully.hpp"
-//#include "bully_op.hpp"
-
-/* Commands:
- *   mknode->ID
- *   mknodes->amount
- *   shutdown->ID
- *   fail->ID
- *   boot->ID
- *   lsnodes
- *   rmnode->ID
-*/
 
 class SingletonBully {
     private:
@@ -28,7 +17,6 @@ class SingletonBully {
         void fail(int ID);
         void list_nodes();
         void join_threads();
-        // void remove_node(int ID);
         void help();
 };
 
@@ -51,11 +39,8 @@ void SingletonBully::make_node(int ID) {
     Bully* tmp = new Bully(ID);
 }
 
+// Makes N nodes with ID's beginning from the node with highest ID
 void SingletonBully::make_nodes(int node_amount) {
-    // int curr_max_ID = bully_access->leader->ID;
-    // BUG
-    // The max ID does not have to be the Leader's Id.
-    // Node 7 can be Leader while node 8 is OFFLINE or FAILED
     int max_ID = 0;
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         int curr_ID = bully_access->node_list[i]->ID;
@@ -63,10 +48,6 @@ void SingletonBully::make_nodes(int node_amount) {
             max_ID = curr_ID;
         }
     }
-    // bool exists[max_ID+1] = { false };
-    // for (int i = 0; i < bully_access->node_list.size(); i++) {
-    //     exists[bully_access->node_list[i]->ID] = true;
-    // }
     for (int i = 1; i <= node_amount; i++) {
         make_node(max_ID+i);
     }
@@ -75,9 +56,14 @@ void SingletonBully::make_nodes(int node_amount) {
 void SingletonBully::boot_node(int ID) {
 	for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
-            bully_access->node_list[i]->responsive.unlock();
-            bully_access->node_list[i]->st = BOOTING;
-            bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
+            if (bully_access->node_list[i]->st < TIMEOUT) {
+                bully_access->node_list[i]->responsive.unlock();
+                bully_access->node_list[i]->st = BOOTING;
+                bully_access->node_list[i]->alive = new thread(&Bully::run, bully_access->node_list[i]);
+            }
+            else {
+                cout << "Node with ID " << bully_access->node_list[i]->ID << " is already in state '" << bully_access->node_list[i]->st_string() << "'." << endl;
+            }
         }
     }
 }
@@ -95,9 +81,14 @@ void SingletonBully::boot_nodes() {
 void SingletonBully::shutdown(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
-            bully_access->node_list[i]->st = OFFLINE;
-            bully_access->node_list[i]->responsive.lock();
-            bully_access->node_list[i]->m_election.unlock();
+            if (bully_access->node_list[i]->st > OFFLINE) {
+                bully_access->node_list[i]->st = OFFLINE;
+                bully_access->node_list[i]->responsive.lock();
+                bully_access->node_list[i]->m_election.unlock();
+            }
+            else {
+                cout << "Node with ID " << bully_access->node_list[i]->ID << " is already in state '" << bully_access->node_list[i]->st_string() << "'." << endl;
+            }
         }
     }
 }
@@ -105,9 +96,14 @@ void SingletonBully::shutdown(int ID) {
 void SingletonBully::fail(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
-            bully_access->node_list[i]->st = FAILED;
-            bully_access->node_list[i]->responsive.lock();
-            bully_access->node_list[i]->m_election.unlock();
+            if (bully_access->node_list[i]->st > OFFLINE) {
+                bully_access->node_list[i]->st = FAILED;
+                bully_access->node_list[i]->responsive.lock();
+                bully_access->node_list[i]->m_election.unlock();
+            }
+            else {
+                cout << "Node with ID " << bully_access->node_list[i]->ID << " is already in state '" << bully_access->node_list[i]->st_string() << "'." << endl;
+            }
         }
     }
 }
@@ -132,15 +128,7 @@ void SingletonBully::join_threads() {
     }
 }
 
-// void SingletonBully::remove_node(int ID) {
-//     for (int i = 0; i < bully_access->node_list.size(); i++) {
-//         if (ID == node_list[i]) {
-//             Bully* tmp = node_list[i];
-//             node_list
-//         }
-//     }
-// }
-
+// Prints all avaliable commands and their use case.
 void SingletonBully::help() {
     cout << "Avaliable commands are: " << endl;
     cout << "-   mknode      : make a single node." << endl;
@@ -150,5 +138,4 @@ void SingletonBully::help() {
     cout << "-   shutdown    : shut down a node." << endl;
     cout << "-   fail        : crash a node." << endl;
     cout << "-   ls          : list all nodes." << endl;
-    //cout << "-   rmnode      : to remove a node from the network." << endl;
 }

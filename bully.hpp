@@ -51,7 +51,6 @@ class Bully {
         void receive(message msg, Bully* sender);
         void take_over_election();
         void initiate_election();
-        //void raise_election();
         void fail();
         string st_string();
 };
@@ -75,19 +74,19 @@ Bully::Bully(int ID) {
     this->m.unlock();
 
     bool is_ID_avalailable = true;
-    for (int i = 0; i < node_list.size(); i++) {    // Is ID avaliable
+    for (int i = 0; i < node_list.size(); i++) {    // Checks for ID availability
         if (ID == node_list[i]->ID) {
             is_ID_avalailable = false;
         }
     }
-    if (is_ID_avalailable) {                        // ID is avaliable, add this node to list
+    if (is_ID_avalailable) {                        // ID is available, add this node to list
         this->m.lock();
         this->ID = ID;
         this->m.unlock();
 
         node_list.push_back(this);
     }
-    else {                                          // ID is not avaliable, destruct the current object
+    else {                                          // ID is not availiable, destruct the current object
         cout << "ID " << ID << " not available" << endl;
         delete this;
     }
@@ -96,15 +95,15 @@ Bully::Bully(int ID) {
 // Run function to be called on thread
 void Bully::run() {
     srand(time(0));
-    while (!(this->st <= OFFLINE)) {
-        if (this->st == TIMEOUT) {            
+    while (!(this->st <= OFFLINE)) {            // Keep looping as long as state is "online"
+        if (this->st == TIMEOUT) {              // If state is timeout, sleep for 0.2s 
             chrono::milliseconds interval(200);
             this_thread::sleep_for(interval);
             this->st = ONLINE;
         }
-        chrono::milliseconds interval((rand() % 300) + 101);
+        chrono::milliseconds interval((rand() % 300) + 101);    // Simulate random amount of work before checking for leader availability
         this_thread::sleep_for(interval);
-        // If a leader exists which isn't offline
+        // Is the node booting? Has a leader not been found? Is the elected leader offline and we're not in an election already? Then initiate one.
         if ((this->st == BOOTING || !leader->found || node_list[leader->index]->st <= OFFLINE) && this->st != IN_ELECTION) {
             if (!(this->st <= OFFLINE)) {
                 this->m_election_perm.unlock();
@@ -123,45 +122,38 @@ void Bully::send_message(message msg, Bully* receiver) {
         receiver->responsive.unlock();
         while (this->st == TIMEOUT) {}
 
-        if (this->st >= ONLINE) {   // If online
+        if (this->st >= ONLINE) {   // Only increase message number and send message if this node is "online"
             this->m.lock();
             message_no++;
             this->m.unlock();
 
             receiver->receive(msg, this);
         }
-        else {
-            // cout << "NOTICE " << this->ID << " is " << this->st_string() << endl;
-        }
     }
-
 }
 
 // Here the node receives a msg and does something according to the message
 void Bully::receive(message msg, Bully* sender) {
     if (this->responsive.try_lock()) {
         this->responsive.unlock();
-        if (this->st >= TIMEOUT) {
+        if (this->st >= TIMEOUT) {                  // Have to be "online" to recieve a message
             switch(msg) {
-                case ELECTION:                      //The message is Election
+                case ELECTION:                      // If message is Election
                     cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
-                    this->send_message(OK, sender); //send OK to sender
-                    // NOTE BUG
-                    // Not raising election as leader is bad, as coordinator messages
-                    // won't be send to newly booted nodes.
-                    if (this->st >= ONLINE) {
+                    this->send_message(OK, sender); // Send OK to sender
+                    if (this->st >= ONLINE) {       // Only take over election if node is online (this check could be removed as it's already done earlier?)
                         this->take_over_election();
                     }
                     break;
-                case OK:                            //the message is OK
+                case OK:                            // If message is OK
                     cout << sender->ID << " -> " << this->ID << " OK" << endl;
                     this->m.lock();
-                    if (!(this->st <= OFFLINE)) {   //set state as online
+                    if (!(this->st <= OFFLINE)) {   // Set state as online
                         this->st = TIMEOUT;
                     }
                     this->m.unlock();
                     break;
-                case COORDINATOR:                   //The message is COORDINATOR
+                case COORDINATOR:                   // If message is COORDINATOR
                     cout << sender->ID << " -> " << this->ID << " COORDINATOR" << endl;
                     this->m.lock();
                     if (!(this->st <= OFFLINE)) {
@@ -178,11 +170,9 @@ void Bully::receive(message msg, Bully* sender) {
 }
 
 void Bully::initiate_election() {
-    // cout << "ID: " << this->ID << " _rasie election" << endl;
     if (this->m_election.try_lock()) {
         cout << this->ID << " initiate election." << endl;
         _raise_election();
-        // this->m_election.unlock();
     }
 }
 
@@ -196,35 +186,34 @@ void Bully::take_over_election() {
 
 void Bully::_raise_election() {
     
-    this->m.lock();
-    this->st = IN_ELECTION;
+    this->m.lock();             // Set own state to ELECTION before continuing, otherwise wait till it's possible.
+    this->st = IN_ELECTION;     
     this->m.unlock();
 
-    for (int i = 0; i < node_list.size(); i++) {
-        if (this->st >= ONLINE && this->m_election_perm.try_lock()) {
+    for (int i = 0; i < node_list.size(); i++) {                            // Why don't we check for ONLINE state and election permission here, and instead do it in the next line?
+        if (this->st >= ONLINE && this->m_election_perm.try_lock()) {       // If node has election permission, send message ELECTION to all nodes with larger ID's
             this->m_election_perm.unlock();
             if (node_list[i]->ID > this->ID) {
                 this->send_message(ELECTION, node_list[i]);
             }
         }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));    // Sleep for 500ms - 0.5 seconds
-    // cout << "ID: " << this->ID << " Sleep done, checking if I got ok's." << endl;
-    if (this->st == IN_ELECTION) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));            // Waiting  0.25s for for replies
+    if (this->st == IN_ELECTION) {                                          // If still in election state, that means no one has replied OK, since that would change node state to ONLINE. - then self assign LEADER
         this->m_election_perm.lock();
         this->m.lock();
-    //    cout << "ID: " << this->ID <<" Got no okay's now I'm leader." << endl;
         this->st = LEADER;
-        leader->found = true;
-        leader->ID = this->ID;
-        for (int i = 0; i < node_list.size(); i++){
+        cout << this->ID << " has elected itself as leader." << endl;
+        leader->found = true;       
+        leader->ID = this->ID;      // Updating leader role information to current node
+        for (int i = 0; i < node_list.size(); i++){             // Find its own index and put that in the LeaderInfo "leader"
             if (this->ID == node_list[i]->ID) {
                 leader->index = i;
             }
         }
         this->m.unlock();
 
-        for (int i = 0; i < node_list.size(); i++) {
+        for (int i = 0; i < node_list.size(); i++) {            // Update all nodes about who's the new leader
             if (!(node_list[i]->ID == this->ID)) {
                 this->send_message(COORDINATOR, node_list[i]);
             }

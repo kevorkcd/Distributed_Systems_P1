@@ -5,17 +5,6 @@
 
 using namespace std;
 
-/* Commands:
- *   mknode->ID
- *   mknodes->amount
- *   shutdown->ID
- *   fail->ID
- *   boot->ID
- *   btnodes
- *   lsnodes
- *   rmnode->ID
-*/
-
 class BullyCLI {
     public:
         BullyCLI();
@@ -63,12 +52,7 @@ void BullyCLI::run() {
         }
         else if (input == "ls") {
             Network->list_nodes();
-        }/*
-        else if (input == "rmnode") {
-            int rm_node_ID;
-            cin >> rm_node_ID;
-            Network->remove_node(rm_node_ID);
-        }*/
+        }
         else if (input == "help") {
             Network->help();
         }
