@@ -23,3 +23,6 @@ Discarding local changes (permanently) to a file
     $ git checkout -- <file>
 Discard all local changes, but save them for possible re-use later
     $ git stash
+
+Remove unnecessarily leaked files and folders - be coutious.
+    $ git rm -r --cached .
