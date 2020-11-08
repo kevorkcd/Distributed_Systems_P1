@@ -29,3 +29,5 @@ Remove unnecessarily leaked files and folders.
     $ git add .
     $ git commit "xmsg"
     $ git push
+If just for one file.
+    $ git rm --cached <filename>
