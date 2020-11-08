@@ -153,6 +153,9 @@ void Bully::receive(message msg, Bully* sender, Bully* leader) {
                 case ELECTION:                      // If message is Election
                     cout << sender->ID << " -> " << this->ID << " ELECTION" << endl;
                     //this->send_message(OK, sender); // Send OK to sender
+                    this->m.lock();
+                    message_no++;
+                    this->m.unlock();
                     sender->receive(OK, this, leader);
                     break;
                 case OK:                            // If message is OK
