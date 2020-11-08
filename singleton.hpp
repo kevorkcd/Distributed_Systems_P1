@@ -135,7 +135,7 @@ void SingletonBully::help() {
     cout << "-   mknodes     : make multiple nodes." << endl;
     cout << "-   btnode      : boot up a node." << endl;
     cout << "-   btnodes     : boot up all offline nodes." << endl;
-    cout << "-   shutdown    : shut down a node." << endl;
-    cout << "-   fail        : crash a node." << endl;
+    cout << "-   kill        : shut down a node." << endl;
+    cout << "-   crash       : fail a node." << endl;
     cout << "-   ls          : list all nodes." << endl;
 }
