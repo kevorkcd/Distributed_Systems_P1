@@ -184,7 +184,6 @@ void Bully::take_over_election() {
 }
 
 void Bully::_raise_election() {
-    
     this->m.lock();             // Set own state to ELECTION before continuing, otherwise wait till it's possible.
     this->st = IN_ELECTION;     
     this->m.unlock();
@@ -245,7 +244,7 @@ string Bully::st_string() {
             return "LEADER";
             break;
         default:
-            return "";
+            return "UNKNOWN STATE";
             break;
     }
 }
