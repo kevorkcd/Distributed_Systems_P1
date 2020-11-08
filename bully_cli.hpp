@@ -43,7 +43,10 @@ void BullyCLI::run() {
         else if (input == "kill") {
             int shut_ID;
             cin >> shut_ID;
-            Network->shutdown(shut_ID);
+            Network->shutdown_node(shut_ID);
+        }
+        else if (input == "killall") {
+            Network->shutdown_nodes();
         }
         else if (input == "crash") { 
             int fail_ID;

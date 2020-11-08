@@ -13,7 +13,8 @@ class SingletonBully {
         void make_nodes(int node_amount);
         void boot_node(int ID);
         void boot_nodes();
-        void shutdown(int ID);
+        void shutdown_node(int ID);
+        void shutdown_nodes();
         void fail(int ID);
         void list_nodes();
         void join_threads();
@@ -78,7 +79,7 @@ void SingletonBully::boot_nodes() {
     }
 }
 
-void SingletonBully::shutdown(int ID) {
+void SingletonBully::shutdown_node(int ID) {
     for (int i = 0; i < bully_access->node_list.size(); i++) {
         if (ID == bully_access->node_list[i]->ID) {
             if (bully_access->node_list[i]->st > OFFLINE) {
@@ -89,6 +90,19 @@ void SingletonBully::shutdown(int ID) {
             else {
                 cout << "Node with ID " << bully_access->node_list[i]->ID << " is already in state '" << bully_access->node_list[i]->st_string() << "'." << endl;
             }
+        }
+    }
+}
+
+void SingletonBully::shutdown_nodes() {
+    for (int i = 0; i < bully_access->node_list.size(); i++) {
+        if (bully_access->node_list[i]->st > OFFLINE) {
+            bully_access->node_list[i]->st = OFFLINE;
+            bully_access->node_list[i]->responsive.lock();
+            bully_access->node_list[i]->m_election.unlock();
+        }
+        else {
+            cout << "Node with ID " << bully_access->node_list[i]->ID << " is already in state '" << bully_access->node_list[i]->st_string() << "'." << endl;
         }
     }
 }
