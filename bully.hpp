@@ -160,7 +160,6 @@ void Bully::receive(message msg, Bully* sender) {
                         this->st = TIMEOUT;
                     }
                     this->m.unlock();
-                    this->m_election.unlock();
                     break;
                 default:
                     break;
@@ -185,7 +184,6 @@ void Bully::take_over_election() {
 }
 
 void Bully::_raise_election() {
-    
     this->m.lock();             // Set own state to ELECTION before continuing, otherwise wait till it's possible.
     this->st = IN_ELECTION;     
     this->m.unlock();
@@ -201,6 +199,7 @@ void Bully::_raise_election() {
     std::this_thread::sleep_for(std::chrono::milliseconds(250));            // Waiting  0.25s for for replies
     if (this->st == IN_ELECTION) {                                          // If still in election state, that means no one has replied OK, since that would change node state to ONLINE. - then self assign LEADER
         this->m_election_perm.lock();
+        this->m_election.unlock();
         this->m.lock();
         this->st = LEADER;
         cout << this->ID << " has elected itself as leader." << endl;
@@ -245,7 +244,7 @@ string Bully::st_string() {
             return "LEADER";
             break;
         default:
-            return "";
+            return "UNKNOWN STATE";
             break;
     }
 }
