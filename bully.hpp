@@ -120,9 +120,9 @@ void Bully::run() {
 void Bully::send_message(message msg, Bully* receiver) {
     if (receiver->responsive.try_lock()) {
         receiver->responsive.unlock();
-        while (this->st == TIMEOUT) {
+        if (this->st == TIMEOUT) {
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
-            this->st = IN_ELECTION;         
+            this->st = ONLINE;
         }
 
         if (this->st >= ONLINE) {   // Only increase message number and send message if this node is "online"
