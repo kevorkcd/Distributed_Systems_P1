@@ -19,6 +19,7 @@ class SingletonBully {
         void list_nodes();
         void join_threads();
         void help();
+        int get_message_no();
 };
 
 SingletonBully* SingletonBully::instance = nullptr;
@@ -153,4 +154,8 @@ void SingletonBully::help() {
     cout << "-   killall     : shuts down all nodes." << endl;
     cout << "-   crash       : fail a node." << endl;
     cout << "-   ls          : list all nodes." << endl;
+}
+
+int SingletonBully::get_message_no() {
+    return bully_access->message_no;
 }
