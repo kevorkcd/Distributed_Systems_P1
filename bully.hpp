@@ -120,7 +120,10 @@ void Bully::run() {
 void Bully::send_message(message msg, Bully* receiver) {
     if (receiver->responsive.try_lock()) {
         receiver->responsive.unlock();
-        while (this->st == TIMEOUT) {}
+        while (this->st == TIMEOUT) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            this->st = IN_ELECTION;         
+        }
 
         if (this->st >= ONLINE) {   // Only increase message number and send message if this node is "online"
             this->m.lock();
@@ -189,8 +192,8 @@ void Bully::_raise_election() {
     this->m.unlock();
 
     for (int i = 0; i < node_list.size(); i++) {                            // Why don't we check for ONLINE state and election permission here, and instead do it in the next line?
-        if (this->st >= ONLINE && this->m_election_perm.try_lock()) {       // If node has election permission, send message ELECTION to all nodes with larger ID's
-            this->m_election_perm.unlock();
+        if (this->st >= TIMEOUT /*&& this->m_election_perm.try_lock()*/) {       // If node has election permission, send message ELECTION to all nodes with larger ID's
+            //this->m_election_perm.unlock();
             if (node_list[i]->ID > this->ID) {
                 this->send_message(ELECTION, node_list[i]);
             }
